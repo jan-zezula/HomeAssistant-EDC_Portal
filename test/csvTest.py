@@ -5789,11 +5789,11 @@ class TestStringMethods(unittest.TestCase):
 #        print(f"XXX: ")
         directory = Path("../data/")
         logger = EdcLogger()
-        exporter = EdcExporter(str(directory.resolve()), logger)
+        exporter = EdcExporter(str(directory.resolve()), 1900, '', logger)
         file = (directory / "automatic-export.csv")
         x = str(file.resolve())
         m = dt.now().month
-        csvDataFromFile = file.read_text()
+        csvDataFromFile = file.read_text(encoding='utf-8-sig')
 
         parsedCsv = edc.parse_csv(csvDataFromFile, "test.csv")
         print("distributionEans [%s]"% list(map(lambda ean: ean.name, parsedCsv.distributionEans)))

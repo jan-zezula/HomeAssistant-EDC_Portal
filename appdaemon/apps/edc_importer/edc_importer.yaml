@@ -6,3 +6,5 @@ edc_importer_app:
   password: !secret edc_password
   exportGroup: !secret edc_import_group
   dataDirectory: "/homeassistant/appdaemon/apps/edc_importer/data"
+  #advancedPrices: 2024:01:*:1900
+  basicPrice: 1900

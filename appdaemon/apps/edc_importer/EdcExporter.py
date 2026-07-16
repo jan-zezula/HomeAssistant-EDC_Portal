@@ -13,12 +13,19 @@ class EdcExporter:
 	dataDirectory = 'undefined'
 	uiLogger: EdcLogger = 'undefined'
 	exportHeader = "statistic_id;unit;start;state;sum"
+	basicPrice = 'undefined'
+	advancedPrices = 'undefined'
 
-	def __init__(self, dataDirectory, logger: EdcLogger, hass = 'undefined'):
+	def __init__(self, dataDirectory, basicPrice = 1000, advancedPrices = '', logger: EdcLogger = 'undefined', hass = 'undefined'):
 		self.hass = hass
 		self.uiLogger = logger
+		self.basicPrice = basicPrice
+		self.advancedPrices = advancedPrices
 		self.dataDirectory = Path(f"{dataDirectory}/")
 		self.uiLogger.logAndPrint("EDC Exporter Initialized")
+		
+#	def findMonthPrice(self, year: int, month: int, eanPattern: str):
+		
 		
 	def exportData(self, parsedData: Csv, grouping: GroupingOptions = "1m"):
 		self.uiLogger.logAndPrint(f"Exporting data {grouping}")
@@ -49,7 +56,7 @@ class EdcExporter:
 		#it might be consumer resolver....
 		dataResolver = partial(self.resolveConsumer)
 		calculator = partial(self.calculateBeforeAfterDifference)
-		self.exportConsumptionForEans(intervals, parsedData.consumerEans, "shared", grouping, dataResolver, calculator)
+		self.exportConsumptionForEans(intervals, parsedData.consumerEans, "shared", grouping, dataResolver, calculator, True)
 		
 	
 	def exportProducerMissed(self, parsedData: Csv, intervals: List[Interval], grouping: GroupingOptions):
@@ -78,11 +85,13 @@ class EdcExporter:
 
 
 
-	def exportConsumptionForEans(self, intervals: List[Interval], eans: List[Ean], dataType: AnyStr, grouping: GroupingOptions, dataResolver: partial, calculator: partial):
+	def exportConsumptionForEans(self, intervals: List[Interval], eans: List[Ean], dataType: AnyStr, grouping: GroupingOptions, dataResolver: partial, calculator: partial, exportPrice: bool = False):
 		for eanIndex, ean in enumerate(eans):
 			self.uiLogger.logAndPrint(f"Exporting {dataType} EAN  [{ean.name}].")
 			entityName = self.createEntity("edc_data", dataType, self.convertGroupinToName(grouping), ean.name)
-			file = self.exportFile(eanIndex, ean.name, entityName, intervals, dataResolver, calculator, dataType, grouping)
+			if (exportPrice):
+				self.createEntity("edc_data", dataType, f"{self.convertGroupinToName(grouping)}_price", ean.name, "CZK")
+			file = self.exportFile(eanIndex, ean.name, entityName, intervals, dataResolver, calculator, dataType, grouping, exportPrice)
 			self.uploadFile(file)
 			
 			if (grouping == "1m"):
@@ -108,7 +117,7 @@ class EdcExporter:
 		
 	#dataType: producer/consumer
 	#interval: hour/day/month
-	def createEntity(self, entityBaseName: AnyStr, dataType: AnyStr, interval: AnyStr, ean: AnyStr):
+	def createEntity(self, entityBaseName: AnyStr, dataType: AnyStr, interval: AnyStr, ean: AnyStr, unit: AnyStr = 'kWh'):
 		completeEntityName = f"{entityBaseName}_{dataType}_{ean}_{interval}"
 		fullEntityName = f"input_number.{completeEntityName}"
 		if (self.hass != 'undefined'):
@@ -121,14 +130,14 @@ class EdcExporter:
 				"name": f"EDC {dataType.capitalize()} {interval.capitalize()} for EAN: {ean}",
 				"icon" : "mdi:database-arrow-down",
 				"state_class": "measurement",
-				"unit_of_measurement": "kWh"
+				"unit_of_measurement": f"{unit}"
 			})
 			#else: 
 		#		self.uiLogger.logAndPrint(f"Entity exists [{fullEntityName}, with state: [{existingState}]")
 		return completeEntityName
 
 
-	def exportFile(self, i, ean: AnyStr, entityName, intervals: List[Interval], dataResolver, calculator: partial, dataType: AnyStr, grouping: GroupingOptions):
+	def exportFile(self, i, ean: AnyStr, entityName, intervals: List[Interval], dataResolver, calculator: partial, dataType: AnyStr, grouping: GroupingOptions, exportPrice: bool = False):
 		fileName = f"{dataType}_export_{ean}_{grouping}.csv"
 		fileName = (self.dataDirectory / fileName)
 		self.uiLogger.logAndPrint(f"Exporting file [{fileName.resolve()}]")
@@ -141,6 +150,10 @@ class EdcExporter:
 			value = calculator(data[i])
 
 			self.writeData(exportFile, entityName, statisticDate, value)
+			if (exportPrice):
+				#write cost data
+				cost = value * self.basicPrice / 1000
+				self.writeData(exportFile, f"{entityName}_price", statisticDate, cost, 'CZK')
 			#in case on month statistic we need to set end date otherwise sometimes HA screw up last day of the month
 			if (grouping == "1m"):
 				lastDay = calendar.monthrange(statisticDate.year, statisticDate.month)[1]
@@ -149,6 +162,10 @@ class EdcExporter:
 				if lastDayDate > datetime.now():
 					lastDayDate = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 				self.writeData(exportFile, entityName, lastDayDate, value)
+				if (exportPrice):
+					#write cost data
+					cost = value * self.basicPrice / 1000
+					self.writeData(exportFile, f"{entityName}_price", lastDayDate, cost, 'CZK')
 			
 		exportFile.close()
 		return fileName
@@ -156,9 +173,9 @@ class EdcExporter:
 	def parseIntervalStart(self, interval: Interval) -> datetime:
 		return datetime.strptime(f"{interval.start}", "%Y-%m-%d %H:%M:%S")
 	
-	def writeData(self, exportFile, entityName, statisticDate, value):
+	def writeData(self, exportFile, entityName, statisticDate, value, unit = 'kWh'):
 		statisticDateStr = statisticDate.strftime('%d.%m.%Y %H:%M')
-		exportFile.write(f"input_number.{entityName};kWh;{statisticDateStr};{(value):.2f};0\n")
+		exportFile.write(f"input_number.{entityName};{unit};{statisticDateStr};{(value):.2f};0\n")
 		
 	
 	def uploadFile(self, file: Path):

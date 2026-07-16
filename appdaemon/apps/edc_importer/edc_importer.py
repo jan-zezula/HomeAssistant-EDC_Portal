@@ -1,4 +1,4 @@
-version = "1.5.1"
+version = "1.6.0"
 
 from EdcLogger import EdcLogger
 import utils
@@ -29,7 +29,7 @@ class EDCImporter(Hass):
         self.uiLogger = logger
 
         self.edcScraper = EdcScraper("/usr/bin/chromedriver", self.args["username"], self.args["password"], self.args["exportGroup"], self.args["dataDirectory"], logger)
-        self.edcExporter = EdcExporter(self.args["dataDirectory"], logger, self)
+        self.edcExporter = EdcExporter(self.args["dataDirectory"], self.args["basicPrice"], self.args["advancedPrices"], logger, self)
 
         self.listen_event(self.importEdcDataEventHandler, "edc_import")
         self.listen_event(self.importEdcDailyDataEventHandler, "edc_import_daily")
@@ -201,7 +201,7 @@ class EDCImporter(Hass):
             self.set_state("input_text.edc_script_parameters", state=scriptParameters)
             dataFile = self.edcScraper.scrapeData(month, year)
 
-            csvDataFromFile = dataFile.read_text()
+            csvDataFromFile = dataFile.read_text(encoding='utf-8-sig')
             fileLenght = len(csvDataFromFile)
             if (fileLenght < 200):
                 #approx 2 lines

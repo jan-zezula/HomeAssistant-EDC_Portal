@@ -39,9 +39,14 @@ Dynamické entity:
 * **edc_data_producer_sold_network_\<producer EAN\>_\<interval\>** - Elektřina prodána producentem do sítě pro kterou nebyl odběr o konzumentů.
 * **edc_data_consumer_missed_\<consumer EAN\>_\<interval\>** - Elektřina u odběratele, která mohla být sdílena, tedy existovala dostatečná kapacita u výrobce.
 * **edc_data_consumer_purchased_\<consumer EAN\>_\<interval\>** - Nakoupená elektřina odběratelem ze sítě.
+* **edc_data_shared_\<consumer EAN\>_monthly_price** - Měsíční cena odebrané elektřiny odběratelem.
+
 
 > [!IMPORTANT]
 > Všechny hodnoty v `missed` jsou již také započteny do hodnot v `sold/purchased` a není je tedy potřeba připočítávat.
+
+> [!TIP]
+> Cenu elektřiny lze zadat v souboru `edc_importer\edc_importer.yaml` `basicPrice`. Default hodnota je 1900
 
 
 ## Požadavky
