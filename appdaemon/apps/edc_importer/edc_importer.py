@@ -1,4 +1,4 @@
-version = "1.6.0"
+version = "1.6.1"
 
 from EdcLogger import EdcLogger
 import utils
@@ -29,7 +29,8 @@ class EDCImporter(Hass):
         self.uiLogger = logger
 
         self.edcScraper = EdcScraper("/usr/bin/chromedriver", self.args["username"], self.args["password"], self.args["exportGroup"], self.args["dataDirectory"], logger)
-        self.edcExporter = EdcExporter(self.args["dataDirectory"], self.args["basicPrice"], self.args["advancedPrices"], logger, self)
+        #self.edcExporter = EdcExporter(self.args["dataDirectory"], self.args["basicPrice"], self.args["advancedPrices"], logger, self)
+        self.edcExporter = EdcExporter(self.args["dataDirectory"], '', self.args["basicPrice"], logger, self)
 
         self.listen_event(self.importEdcDataEventHandler, "edc_import")
         self.listen_event(self.importEdcDailyDataEventHandler, "edc_import_daily")
