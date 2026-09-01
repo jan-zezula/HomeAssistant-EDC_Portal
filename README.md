@@ -72,7 +72,7 @@ Nejdříve je potřeba vygenerovat `Long-lived access token`. Token se vygeneruj
 3. Po instalaci přejděte do nastavení AppDaemon
 	* v části "System Packages" přidejte `chromium-driver` a `chromium`. Pozn.: pokaždé vložte jeden název a stiskněte enter, je nutné přidávat postupně
  
-	* v části "Python packages" přidejte _selenium_, _pandas_, _numpy==1.26.4_ a _bs4_. Pozn.: pokaždé vložte jeden název a stiskněte enter, je nutné přidávat postupně
+	* v části "Python packages" přidejte _selenium_, _pandas_, _numpy_ a _bs4_. Pozn.: pokaždé vložte jeden název a stiskněte enter, je nutné přidávat postupně
 	* Klikněte na "Uložit". Konfigurace by měla odpovídat obrázku níže -> 
 
 
